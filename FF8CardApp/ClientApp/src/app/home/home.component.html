@@ -14,7 +14,7 @@
       <tbody>
         <tr *ngFor="let yItem of [].constructor(3); let y = index">
           <td style="width: 93px; height: 120px; border: 3px solid black;" id="{{x + ':' + y}}" (click)="onClickSquare($event)" *ngFor="let xItem of [].constructor(3); let x = index">
-            <img src="{{ game.board[x][y]?.imageURL }}" [ngClass]="{'inverted': !game.boardOwnership[x][y] }" />
+            <img src="{{ game.gameBoard[x + ':' + y]?.card.imageURL }}" [ngClass]="{'inverted': !game.gameBoard[x + ':' + y]?.isAlpha }" />
           </td>
         </tr>
       </tbody>

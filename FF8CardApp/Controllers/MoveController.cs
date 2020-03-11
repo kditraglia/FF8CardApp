@@ -37,12 +37,12 @@ namespace FF8CardApp.Controllers
             {
                 return optimalMoveRequest.Game;
             }
-            optimalMoveRequest.Game.invertBoard();
+            optimalMoveRequest.Game.InvertBoard();
             Move m = GameSolver.BestMove(
                 optimalMoveRequest.BetaCards, 
                 optimalMoveRequest.AlphaCards,
                 optimalMoveRequest.Game);
-            optimalMoveRequest.Game.invertBoard();
+            optimalMoveRequest.Game.InvertBoard();
             optimalMoveRequest.Game.addCard(m.Card, m.X, m.Y, false);
 
             return optimalMoveRequest.Game;

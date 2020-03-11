@@ -1,61 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace FF8CardApp.Model
 {
+    [DebuggerDisplay("{Card} - {IsAlpha}")]
+    public class GameSquare
+    {
+        public Card Card { get; set; }
+        public bool IsAlpha { get; set; }
+
+        public GameSquare()
+        {
+
+        }
+
+        public GameSquare(Card card, bool isAlpha)
+        {
+            Card = card;
+            IsAlpha = isAlpha;
+        }
+    }
     public class Game
     {
-        public Card[][] board { get; set; }
-        public bool?[][] boardOwnership { get; set; }
+        public Dictionary<String, GameSquare> GameBoard { get; set; }
         public Move LastMove { get; set; }
 
         public Game()
         {
-            //Ignore how ridiculous these declarations are, I was fighting with a serializer to send the whole game state to an angular app
-            //I wrote to visual the results
-            board = new Card[3][];
-            board[0] = new Card[3];
-            board[1] = new Card[3];
-            board[2] = new Card[3];
-
-            boardOwnership = new bool?[3][];
-            boardOwnership[0] = new bool?[3];
-            boardOwnership[1] = new bool?[3];
-            boardOwnership[2] = new bool?[3];
+            GameBoard = new Dictionary<string, GameSquare>();
         }
 
-        public void invertBoard()
+        public void InvertBoard()
         {
-            for (int xPos = 0; xPos < 3; xPos++)
+            foreach(GameSquare gameSquare in GameBoard.Values)
             {
-                for (int yPos = 0; yPos < 3; yPos++)
-                {
-                    if (board[xPos][yPos] != null)
-                    {
-                        boardOwnership[xPos][yPos] = !boardOwnership[xPos][yPos];
-                    }
-                }
+                gameSquare.IsAlpha = !gameSquare.IsAlpha;
             }
         }
 
-        //Used as a short-cut in the recursion to realize we're at a terminal state
         public bool isLastMove()
         {
-            int retVal = 0;
-            for (int xPos = 0; xPos < 3; xPos++)
-            {
-                for (int yPos = 0; yPos < 3; yPos++)
-                {
-                    if (board[xPos][yPos] != null)
-                    {
-                        retVal += 1;
-                    }
-                }
-            }
-
-            return retVal >= 8;
+            return GameBoard.Count >= 8;
         }
 
         public Move makeLastMove(Card card, bool isAlpha)
@@ -66,7 +54,7 @@ namespace FF8CardApp.Model
             {
                 for (int yPos = 0; yPos < 3; yPos++)
                 {
-                    if (board[xPos][yPos] == null)
+                    if (!GameBoard.ContainsKey(keyString(xPos, yPos)))
                     {
                         lastX = xPos;
                         lastY = yPos;
@@ -78,67 +66,69 @@ namespace FF8CardApp.Model
             return addCard(card, lastX, lastY, isAlpha);
         }
 
-        //Simply checks if it's possible to play a card in a square
         public bool canPlay(int x, int y)
         {
-            return board[x][y] == null;
+            return !GameBoard.ContainsKey(keyString(x, y));
         }
 
-        //While traversing the recursive tree it becomes necessary to make moves on a cloned board to ensure each branch has it's own reference
         public Game clone()
         {
             Game clone = new Game();
-            clone.board = board.Select(s => s.ToArray()).ToArray();
-            clone.boardOwnership = boardOwnership.Select(s => s.ToArray()).ToArray();
+            foreach (KeyValuePair<string, GameSquare> square in GameBoard)
+            {
+                clone.GameBoard.Add(square.Key, new GameSquare(square.Value.Card, square.Value.IsAlpha));
+            }
             return clone;
         }
 
-        //A simple function to convert the A to '10', cards in Triple Triad go from 1-A, A being worth 10
-        public int getVal(char num)
+        public Move addCard(Card card, int x, int y, bool isAlpha)
+        {
+            GameBoard.Add(keyString(x, y), new GameSquare(card, isAlpha));
+
+            Card westCard = x > 0 ? GameBoard.GetValueOrDefault(keyString(x - 1, y), null)?.Card : null;
+            Card eastCard = x < 2 ? GameBoard.GetValueOrDefault(keyString(x + 1, y), null)?.Card : null;
+
+            Card southCard = y < 2 ? GameBoard.GetValueOrDefault(keyString(x, y + 1), null)?.Card : null;
+            Card northCard = y > 0 ? GameBoard.GetValueOrDefault(keyString(x, y - 1), null)?.Card : null;
+
+
+            if (eastCard != null && getVal(eastCard.W) < getVal(card.E))
+            {
+                GameBoard.GetValueOrDefault(keyString(x + 1, y)).IsAlpha = isAlpha;
+            }
+
+            if (westCard != null && getVal(westCard.E) < getVal(card.W))
+            {
+                GameBoard.GetValueOrDefault(keyString(x - 1, y)).IsAlpha = isAlpha;
+            }
+
+            if (southCard != null && getVal(southCard.N) < getVal(card.S))
+            {
+                GameBoard.GetValueOrDefault(keyString(x, y + 1)).IsAlpha = isAlpha;
+            }
+
+            if (northCard != null && getVal(northCard.S) < getVal(card.N))
+            {
+                GameBoard.GetValueOrDefault(keyString(x, y - 1)).IsAlpha = isAlpha;
+            }
+
+            int score = GameBoard.Values.Where(sq => sq.IsAlpha).Count();
+            LastMove = new Move() { X = x, Y = y, Card = card, Score = score };
+            return LastMove;
+        }
+
+        private String keyString(int x, int y)
+        {
+            return string.Format("{0}:{1}", x, y);
+        }
+
+        private int getVal(char num)
         {
             if (num == 'A')
             {
                 return 10;
             }
             return int.Parse(num.ToString());
-        }
-
-        //Adds the card and captures any cards possible.  Returns a score equal to the number of alpha cards on the board (and the move that produced it).
-        public Move addCard(Card card, int x, int y, bool isAlpha)
-        {
-            board[x][y] = card;
-            boardOwnership[x][y] = isAlpha;
-
-            Card westCard = x > 0 ? board[x - 1][y] : null;
-            Card eastCard = x < 2 ? board[x + 1][y] : null;
-
-            Card southCard = y < 2 ? board[x][y + 1] : null;
-            Card northCard = y > 0 ? board[x][y - 1] : null;
-
-
-            if (eastCard != null && getVal(eastCard.W) < getVal(card.E))
-            {
-                boardOwnership[x + 1][y] = isAlpha;
-            }
-
-            if (westCard != null && getVal(westCard.E) < getVal(card.W))
-            {
-                boardOwnership[x - 1][y] = isAlpha;
-            }
-
-            if (southCard != null && getVal(southCard.N) < getVal(card.S))
-            {
-                boardOwnership[x][y + 1] = isAlpha;
-            }
-
-            if (northCard != null && getVal(northCard.S) < getVal(card.N))
-            {
-                boardOwnership[x][y - 1] = isAlpha;
-            }
-
-            int score = boardOwnership.SelectMany(o => o).Where(o => o.HasValue && o.Value).Count();
-            LastMove = new Move() { X = x, Y = y, Card = card, Score = score };
-            return LastMove;
         }
     }
 }

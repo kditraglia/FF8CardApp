@@ -82,11 +82,8 @@ namespace FF8CardApp
                             Game cloneGame = g.clone();
                             cloneGame.addCard(playedCard, i, j, isAlpha);
 
-                            //Record the move as we go down the stack, so the terminal states know how we got here
                             int value = Solve(isAlpha ? newHand : alphaCards, isAlpha ? betaCards : newHand, cloneGame, !isAlpha, alpha, beta);
-                            //Pop off the stack as we come back up
 
-                            //Based on my understanding of the algorithm, take the max between the value and bestVal, and the max between bestVal and alpha
                             bestVal = bestVal > value ? bestVal : value;
                             alpha = bestVal > alpha ? bestVal : alpha;
                             if (beta <= alpha)
@@ -125,7 +122,6 @@ namespace FF8CardApp
 
                             int value = Solve(isAlpha ? newHand : alphaCards, isAlpha ? betaCards : newHand, cloneGame, !isAlpha, alpha, beta);
 
-                            //Based on my understanding of the algorithm, take the min between the value and bestVal, and the min between bestVal and beta
                             bestVal = bestVal < value ? bestVal : value;
                             beta = bestVal < beta ? bestVal : beta;
                             if (beta <= alpha)
