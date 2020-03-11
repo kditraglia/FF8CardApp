@@ -1,0 +1,34 @@
+<div style="text-align: center; ">
+  <table *ngIf="alphaCards" style="display: inline-block; float: left; margin: 30px ">
+    <tbody>
+      <tr *ngFor="let card of alphaCards; let i = index">
+        <td><img src="{{ card.imageURL }}" id="{{i}}" (click)="onClickCard($event)" /></td>
+        <td>{{ card.name }}</td>
+        <td>{{ card.e }}  {{ card.n }}  {{ card.w }}  {{ card.s }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <button type="button" (click)="onReset()">Reset</button>
+  <div style="display: inline-block;">
+    <table style="height: 360px; margin: 30px">
+      <tbody>
+        <tr *ngFor="let yItem of [].constructor(3); let y = index">
+          <td style="width: 93px; height: 120px; border: 3px solid black;" id="{{x + ':' + y}}" (click)="onClickSquare($event)" *ngFor="let xItem of [].constructor(3); let x = index">
+            <img src="{{ game.board[x][y]?.imageURL }}" [ngClass]="{'inverted': !game.boardOwnership[x][y] }" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h2>Score: {{alphaScore}} - {{betaScore}}</h2>
+    <h2 *ngIf="isGameOver()">{{whoWon()}}</h2>
+  </div>
+  <table *ngIf="betaCards" style="float: right; display: inline-block; margin: 30px;">
+    <tbody>
+      <tr *ngFor="let card of betaCards">
+        <td>{{ card.element }}</td>
+        <td>{{ card.e }}  {{ card.n }}  {{ card.w }}  {{ card.s }}</td>
+        <td><img src="{{ card.imageURL }}" class="inverted" /></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
