@@ -23,6 +23,19 @@ namespace FF8CardApp.Controllers
         }
 
         [HttpGet]
+        public IEnumerable<Card> Get(string s)
+        {
+            if (s == null || s.Length < 2)
+            {
+                return new List<Card>();
+            }
+            var enemiesCol = db.GetCollection<Card>("cards");
+            var retVal = enemiesCol.Find(c => c.Name.Contains(s));
+            return retVal;
+        }
+
+        [HttpGet]
+        [Route("random")]
         public IEnumerable<Card> Get()
         {
             var enemiesCol = db.GetCollection<Card>("cards");

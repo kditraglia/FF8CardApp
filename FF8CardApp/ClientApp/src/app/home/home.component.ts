@@ -1,5 +1,11 @@
 import { Component, Inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { Card } from '../model/card';
+import { Move } from '../model/move';
+import { Game } from '../model/game';
+import { CardChooserComponent } from '../dialogs/card.dialog';
+
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
@@ -9,16 +15,12 @@ export class HomeComponent {
   public alphaCards: Card[];
   public betaCards: Card[];
   public game: Game;
-  public http: HttpClient;
-  public baseUrl: string;
   public isAlpha: boolean;
   public selectedCard: Card;
   public alphaScore: number;
   public betaScore: number;
 
-  constructor(http: HttpClient, @Inject('BASE_URL') baseUrl: string) {
-    this.http = http;
-    this.baseUrl = baseUrl;
+  constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, private dialog: MatDialog) {
     this.isAlpha = true;
     this.game = new Game();
     this.alphaCards = []
@@ -27,23 +29,44 @@ export class HomeComponent {
     this.onReset();
   }
 
+  setAlphaCards() {
+    this.dialog.open(CardChooserComponent, {
+      data: {
+        alphaCards: this.alphaCards
+      }
+    });
+  }
+
+  setBetaCards() {
+    this.dialog.open(CardChooserComponent, {
+      data: {
+        alphaCards: this.betaCards
+      }
+    });
+  }
+
   onReset() {
     this.game = new Game();
     this.isAlpha = true;
 
-    this.http.get<Card[]>(this.baseUrl + 'Card').subscribe(result => {
+    this.http.get<Card[]>(this.baseUrl + 'card/random').subscribe(result => {
       this.alphaCards = result;
       this.calcScore();
     }, error => console.error(error));
 
-    this.http.get<Card[]>(this.baseUrl + 'Card').subscribe(result => {
+    this.http.get<Card[]>(this.baseUrl + 'card/random').subscribe(result => {
       this.betaCards = result;
       this.calcScore();
     }, error => console.error(error));
   }
 
+  goFirst() {
+    this.isAlpha = false;
+    this.onClick();
+  }
+
   onClick() {
-    this.http.post<Game>(this.baseUrl + 'Move/optimal', { alphaCards: this.alphaCards, betaCards: this.betaCards, game: this.game }).subscribe(result => {
+    this.http.post<Game>(this.baseUrl + 'move/optimal', { alphaCards: this.alphaCards, betaCards: this.betaCards, game: this.game }).subscribe(result => {
       if (this.isAlpha) {
         this.alphaCards = this.alphaCards.filter(obj => obj.name != result.lastMove.card.name);
       } else {
@@ -105,7 +128,7 @@ export class HomeComponent {
     let x = parseInt(value.split(":")[0]);
     let y = parseInt(value.split(":")[1]);
 
-    this.http.post<Game>(this.baseUrl + 'Move', { game: this.game, card: this.selectedCard, X: x, y: y }).subscribe(result => {
+    this.http.post<Game>(this.baseUrl + 'move', { game: this.game, card: this.selectedCard, X: x, y: y }).subscribe(result => {
       this.game = result;
       this.isAlpha = !this.isAlpha;
       this.alphaCards = this.alphaCards.filter(obj => obj.name != result.lastMove.card.name);
@@ -116,39 +139,3 @@ export class HomeComponent {
   }
 }
 
-interface Move {
-  x: number;
-  y: number;
-  card: Card;
-  score: number;
-}
-
-interface GameSquare {
-  card: Card;
-  isAlpha: boolean;
-}
-
-class Game {
-  gameBoard: Map<string, GameSquare>;
-  lastMove: Move;
-  constructor() {
-    this.gameBoard = new Map();
-  }
-}
-
-class Card {
-  id: number;
-  isAlpha: boolean;
-  cardLevel: number;
-  name: string;
-  imageURL: string;
-  n: string;
-  s: string;
-  e: string;
-  w: string;
-  type: string;
-  element: string;
-  location: string;
-  modRatio: string;
-  modItem: string;
-}

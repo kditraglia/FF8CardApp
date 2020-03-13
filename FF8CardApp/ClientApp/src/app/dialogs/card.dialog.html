@@ -1,0 +1,37 @@
+<mat-dialog-content>
+  <p>
+    {{message}}
+  </p>
+</mat-dialog-content>
+<mat-dialog-actions >
+  <div style="width:100%; ">
+    <mat-form-field style="float:right;">
+      <mat-label>Search</mat-label>
+      <input matInput placeholder="Ex. Quistis" (keyup)="onChange($event)">
+    </mat-form-field>
+  </div>
+  <div style="width: 50%;">
+    <table *ngIf="alphaCards">
+      <tbody>
+        <tr *ngFor="let card of alphaCards; let i = index">
+          <td><img src="{{ card.imageURL }}" id="a-{{i}}" (click)="onClickCard($event)" /></td>
+          <td>{{ card.name }}</td>
+          <td>{{ card.e }}  {{ card.n }}  {{ card.w }}  {{ card.s }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <button mat-raised-button color="primary" (click)="onConfirmClick()" tabindex="1">{{confirmButtonText}}</button>
+    <button mat-raised-button mat-dialog-close tabindex="-1">{{cancelButtonText}}</button>
+  </div>
+  <div style="float:right; width:50%; height: 634px">
+    <table>
+      <tbody>
+        <tr *ngFor="let card of availableCards; let i = index">
+          <td>{{ card.e }}  {{ card.n }}  {{ card.w }}  {{ card.s }}</td>
+          <td>{{ card.name }}</td>
+          <td><img src="{{ card.imageURL }}" id="b-{{i}}" (click)="onClickCard($event)" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</mat-dialog-actions>
